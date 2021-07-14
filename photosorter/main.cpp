@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <string>
 
 
 using namespace std;
@@ -15,8 +16,8 @@ int ascii2(char*);
 
 int main() {
 	string sourceDir = "C:\\Users\\cappe\\Desktop\\";
-	//string destDir = "C:\\Users\\cappe\\Desktop\\nuovo\\";
-	string nomeFile = "c.jpg";
+	string destDir = "C:\\Users\\cappe\\Desktop\\nuovo\\";
+	string nomeFile = "2.jpg";
 	string fileImmagine = sourceDir + nomeFile;
 	//cout << "Nome file: ";
 	//cin >> nomeFile;
@@ -30,6 +31,8 @@ int main() {
 		char temp4byte[4];
 		char temp2byte[2];
 		
+		bool DateTimeTrovato = false;
+		bool ExifIFDPointerTrovato = false;
 		//controlla exif
 		immagine.seekg(6);
 		immagine.read(temp4byte, 4);
@@ -51,9 +54,7 @@ int main() {
 			if (!bigEndian) flip2(temp2byte);
 			ncampi = int2byte(temp2byte);
 			posizione += 2;
-			bool DateTimeTrovato = false;
-			bool ExifIFDPointerTrovato = false;
-			bool DateTime2Trovato = false;
+			
 			int ExifIFDPointer;
 			for (int i = 0; i < ncampi; i++) {
 				immagine.seekg(posizione);
@@ -101,7 +102,7 @@ int main() {
 					immagine.read(temp2byte, 2);
 					if (!bigEndian) flip2(temp2byte);
 					if (strncmp(temp2byte, "\x90\x03", 2) == 0 || strncmp(temp2byte, "\x90\x04", 2) == 0) {
-						DateTime2Trovato = true;
+						DateTimeTrovato = true;
 						posizione += 8;
 						immagine.seekg(posizione);
 						immagine.read(temp4byte, 4);
@@ -119,31 +120,34 @@ int main() {
 					posizione += 12;
 				}
 			}
-			else if (DateTimeTrovato == false && ExifIFDPointerTrovato == false) {
-				cout << "\nnessuna data trovata";
-			}
+			
 
 			// SECONDA PARTE, CREA CARTELLA
-			if (DateTimeTrovato == true || DateTime2Trovato == true) {
-				string percorso = "C:/Users/cappe/Desktop/nuovo/" + anno + "/" + mese + "/";
-				//fs::create_directory("C:\\Users\\cappe\\Desktop\\nuovo\\2014\\05");
-				if (!fs::is_directory(percorso) || !fs::exists(percorso)) { 
-					fs::create_directories(percorso); 
+			if (DateTimeTrovato) {
+				//destDir + ( anno + "/" + mese + "/");
+				if (!fs::is_directory(destDir + (anno + "/" + mese + "/")) || !fs::exists(destDir + (anno + "/" + mese + "/"))) {
+					fs::create_directories(destDir + (anno + "/" + mese + "/"));
 				}
-				string fileDest = percorso + nomeFile;
-				std::filesystem::copy(fileImmagine, fileDest);
+				std::filesystem::copy(fileImmagine, destDir + (anno + "/" + mese + "/"));
 				//std::filesystem::remove(fileImmagine);
 			}
+			
 		}
-		else
-			cout << "non exif!!";
+		else {
+			if (!DateTimeTrovato) {
+				if (!fs::is_directory(destDir + "senza data") || !fs::exists(destDir + "senza data")) {
+					fs::create_directories(destDir + "senza data");
+				}
+				std::filesystem::copy(fileImmagine, destDir + "senza data");
+			}
+			
+
+		}
+			
 		
 	}
 	else
 		cout << "impossibile aprire!";
-	
-		
-	
 
 	return 0;
 }
