@@ -1,6 +1,10 @@
 #include <iostream>
 #include <fstream>
+#include <filesystem>
+
+
 using namespace std;
+namespace fs = std::filesystem;
 
 void flip4(char*);
 void flip2(char*);
@@ -10,13 +14,16 @@ int ascii4(char*);
 int ascii2(char*);
 
 int main() {
-	string nomeFile = "C:\\Users\\cappe\\Desktop\\a.jpg";
+	string sourceDir = "C:\\Users\\cappe\\Desktop\\";
+	//string destDir = "C:\\Users\\cappe\\Desktop\\nuovo\\";
+	string nomeFile = "c.jpg";
+	string fileImmagine = sourceDir + nomeFile;
 	//cout << "Nome file: ";
 	//cin >> nomeFile;
 	ifstream immagine;
-	immagine.open(nomeFile, ios::binary);
+	immagine.open(fileImmagine, ios::binary);
 	if (immagine.is_open()) {
-		int anno, mese;
+		string anno, mese;
 		int posizione;
 		int ncampi;
 		bool bigEndian = true;
@@ -46,6 +53,7 @@ int main() {
 			posizione += 2;
 			bool DateTimeTrovato = false;
 			bool ExifIFDPointerTrovato = false;
+			bool DateTime2Trovato = false;
 			int ExifIFDPointer;
 			for (int i = 0; i < ncampi; i++) {
 				immagine.seekg(posizione);
@@ -60,11 +68,11 @@ int main() {
 					posizione = 12 + int4byte(temp4byte);
 					immagine.seekg(posizione);
 					immagine.read(temp4byte, 4);
-					anno = ascii4(temp4byte);
+					anno = string(temp4byte, 4);
 					posizione += 5;
 					immagine.seekg(posizione);
 					immagine.read(temp2byte, 2);
-					mese = ascii2(temp2byte);
+					mese = string(temp2byte, 2);
 					break;
 				}
 
@@ -93,6 +101,7 @@ int main() {
 					immagine.read(temp2byte, 2);
 					if (!bigEndian) flip2(temp2byte);
 					if (strncmp(temp2byte, "\x90\x03", 2) == 0 || strncmp(temp2byte, "\x90\x04", 2) == 0) {
+						DateTime2Trovato = true;
 						posizione += 8;
 						immagine.seekg(posizione);
 						immagine.read(temp4byte, 4);
@@ -100,11 +109,11 @@ int main() {
 						posizione = 12 + int4byte(temp4byte);
 						immagine.seekg(posizione);
 						immagine.read(temp4byte, 4);
-						anno = ascii4(temp4byte);
+						anno = string(temp4byte, 4);
 						posizione += 5;
 						immagine.seekg(posizione);
 						immagine.read(temp2byte, 2);
-						mese = ascii2(temp2byte);
+						mese = string(temp2byte, 2);
 						break;
 					}
 					posizione += 12;
@@ -113,12 +122,29 @@ int main() {
 			else if (DateTimeTrovato == false && ExifIFDPointerTrovato == false) {
 				cout << "\nnessuna data trovata";
 			}
+
+			// SECONDA PARTE, CREA CARTELLA
+			if (DateTimeTrovato == true || DateTime2Trovato == true) {
+				string percorso = "C:/Users/cappe/Desktop/nuovo/" + anno + "/" + mese + "/";
+				//fs::create_directory("C:\\Users\\cappe\\Desktop\\nuovo\\2014\\05");
+				if (!fs::is_directory(percorso) || !fs::exists(percorso)) { 
+					fs::create_directories(percorso); 
+				}
+				string fileDest = percorso + nomeFile;
+				std::filesystem::copy(fileImmagine, fileDest);
+				//std::filesystem::remove(fileImmagine);
+			}
 		}
 		else
 			cout << "non exif!!";
+		
 	}
 	else
 		cout << "impossibile aprire!";
+	
+		
+	
+
 	return 0;
 }
 
