@@ -14,9 +14,11 @@ int ascii4(char*); //carattere ascii 4 byte -> int
 int ascii2(char*);
 
 int main() {	
-	string sourceDir = ".\\"; //source directory
+	string sourceDir;
+	cout << "Source folder (full path): "; //source directory
+	cin >> sourceDir;
 	string folder;
-	cout << "Folder name: ";
+	cout << "Destination folder name: ";
 	cin >> folder;
 	string destDir = sourceDir + folder + "\\"; // destination directory
 
